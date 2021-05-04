@@ -20,10 +20,11 @@ int main()
 	cin >> case_number;
 
 	for (int case_count = 1; case_count <= case_number; case_count++) {
-		int K;
+		int K,n;
 		int total_weight=0;
 		int max_weight=0;
-		cin >> K;
+		cin >> n;
+		K = 2 * n;
 		vector<vector<int>> graph(K);
 		vector<bool> selected(K,false);
 		vector<edge> candidate(K);
@@ -32,23 +33,27 @@ int main()
 		for (int i = 0; i < K; i++) {
 			graph[i] = vector<int>(K);
 		}
-		for (int i = 0; i < K; i++) {
-			for (int j = 0; j < K; j++) {
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
 				int garbage;
 				cin >> garbage;
 			}
 		}
 		
-		for (int i = 0; i < K; i++) {
-			for (int j = 0; j < K; j++) {
-				cin >> graph[i][j];
-				graph[j][i] = graph[i][j];
-				total_weight += graph[i][j];
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
+				cin >> graph[i][j+n];
+				graph[j+n][i] = graph[i][j+n];
+				total_weight += graph[i][j+n];
 			}
 		}
-
+		for (int i = 0; i < K; i++) {
+				int garbage;
+				cin >> garbage;
+		}
 		for (int i = 0; i < K;i++) {
 			if (false == selected[i]) {
+				bool first_flag = true;
 				for (int j = 0; j < K; j++) {
 					int select = -1;
 					for (int l = 0; l < K; l++) {
@@ -57,16 +62,18 @@ int main()
 						}
 					}
 					
-					if (-1 == select || 0 == candidate[select].w) {
+					if((-1 == select || 0 == candidate[select].w)&&!first_flag) {
 						break;
 					}
+
+					first_flag = false;
 
 					selected[select] = true;
 					max_weight += candidate[select].w;
 
 					for (int l = 0; l < K;l++) {
 						if (graph[select][l] > candidate[l].w) {
-							candidate[select] = { graph[select][l],select };
+							candidate[l] = { graph[select][l],select };
 						}
 					}
 				}
