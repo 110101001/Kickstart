@@ -10,20 +10,52 @@
 
 using namespace std;
 
-unsigned int find(vector<unsigned int>& list, int l, int r, unsigned int x) {
-	if (r - l == 0 || r - l == 1) {
-		if (list[r] == x) {
-			return r;
-		}
-		return l;
+#define MAX_GAP 282
+
+long long quick_pow(long long x, long long n, long long m) {
+	long long res = 1;
+	while (n > 0) {
+		if (n & 1)	res = res * x % m;
+		x = x * x % m;
+		n >>= 1;
+	}
+	return res;
+}
+
+bool isPrime(unsigned long long n) {
+	unsigned long long a, x;
+	unsigned long long d = n - 1;
+	int s = 0;
+	if (n <= 3)
+	{
+		return true;
 	}
 
-	if (x > list[(l + r) >> 1]) {
-		return find(list, (l + r) >> 1, r, x);
+	while (!(d & 1)) {
+		d = d >> 1;
+		s++;
 	}
-	else {
-		return find(list, l, (l + r) >> 1, x);
+
+	for (int i = 0; i < 12; i++) {
+		a = 1 + (rand() % (n - 2));
+
+		x = quick_pow(a, d, n);
+		if (1 == x || n - 1 == x) {
+			continue;
+		}
+
+		for (int r = 0; r < s - 1; r++) {
+			x = x * x % n;
+			if (x == n - 1) {
+				break;
+			}
+		}
+		if (x == n - 1) {
+			continue;
+		}
+		return false;
 	}
+	return true;
 }
 
 int main()
@@ -31,37 +63,40 @@ int main()
 	ios_base::sync_with_stdio(false), cin.tie(nullptr);
 	int case_number;//total number of case
 	cin >> case_number;
-	vector<bool> np(1E5 + 1, false);
-	vector<unsigned int> primes;
-	for (unsigned int i = 2; i <= 1E5; i++) {
-		if (!np[i]) {
-			primes.push_back(i);
-		}
-		for (unsigned int k : primes) {
-			if (k * i > 1E5) {
-				break;
-			}
-			np[k * i] = true;
-			if (0 == i % k) {
-				break;
-			}
-		}
-	}
-
 	for (int case_count = 1; case_count <= case_number; case_count++) {
-		unsigned long long Z;
-		unsigned long long res;
-		unsigned int Zsqrt;
-		int index;
+		unsigned long long Z, res;
+		unsigned long long Zsqrt, s1, s2, l1;
 
 		cin >> Z;
+		
 		Zsqrt = sqrt(Z);
-		index = find(primes, 0, primes.size() - 1, Zsqrt);
 
-		res = primes[index] * primes[index + 1];
+		for (int i = 1; i <= MAX_GAP; i++) {
+			if (isPrime(Zsqrt + i)) {
+				l1 = Zsqrt + i;
+				break;
+			}
+		}
+
+		for (int i = 0; i <= MAX_GAP - (l1 - Zsqrt); i++) {
+			if (isPrime(Zsqrt - i)) {
+				s1 = Zsqrt - i;
+				break;
+			}
+		}
+
+		res = (unsigned long long)l1 * s1;
+
 		if (res > Z) {
 
-			res = primes[index - 1] * primes[index];
+			for (int i = 2; i < MAX_GAP; i++) {
+				if (isPrime(s1 - i)) {
+					s2 = s1 - i;
+					break;
+				}
+			}
+
+			res = (unsigned long long) s1 * s2;
 		}
 
 		cout << "Case #" << case_count << ": " << res << endl;
