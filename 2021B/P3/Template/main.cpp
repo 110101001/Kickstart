@@ -30,6 +30,9 @@ bool isPrime(unsigned long long n) {
 	{
 		return true;
 	}
+	if (0 != (n + 1) % 6 && 0 != (n - 1) % 6) {
+		return false;
+	}
 
 	while (!(d & 1)) {
 		d = d >> 1;
@@ -54,6 +57,12 @@ bool isPrime(unsigned long long n) {
 			continue;
 		}
 		return false;
+	}
+
+	for (unsigned long long i = 2; i * i < n; i++) {
+		if (0 == n % i) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -88,8 +97,7 @@ int main()
 		res = (unsigned long long)l1 * s1;
 
 		if (res > Z) {
-
-			for (int i = 2; i < MAX_GAP; i++) {
+			for (int i = 2; i <= MAX_GAP; i++) {
 				if (isPrime(s1 - i)) {
 					s2 = s1 - i;
 					break;
