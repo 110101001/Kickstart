@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <math.h>
+#include <assert.h>
 
 #define ABS(x) (((x)>0)?(x):(-(x)))
 #define MAX(x,y) ((x>y)?(x):(y))
@@ -13,7 +14,7 @@
 #define RCHILD(x) 2*(x) + 2
 #define PARENT(x) ((x)-1)/2
 
-#define MAXN 50010
+#define MAXN 200010
 
 using namespace std;
 
@@ -25,8 +26,9 @@ typedef struct segtree {
 segTree tree[4*MAXN];
 
 typedef struct road {
-	int to, L, A;
-	road(int _to, int _L,int _A) {
+	int to, L;
+	long long A;
+	road(int _to, int _L,long long _A) {
 		this->to = _to;
 		this->L = _L;
 		this->A = _A;
@@ -68,25 +70,25 @@ void buildTree(int idx,int l,int r) {
 	}
 }
 
-long long updateTree(int idx,int id, int val) {
+long long updateTree(int idx,int id, long long val) {
 	if (id == tree[idx].l && id == tree[idx].r) {
 		tree[idx].v = val;
 	}
 	else {
 		if (id <= ((tree[idx].r + tree[idx].l) / 2)) {
-			int u = updateTree(LCHILD(idx), id, val);
+			long long u = updateTree(LCHILD(idx), id, val);
 			tree[idx].v = gcd(u, tree[RCHILD(idx)].v);
 		}
 		else {
-			int u = updateTree(RCHILD(idx), id, val);
+			long long u = updateTree(RCHILD(idx), id, val);
 			tree[idx].v = gcd(u, tree[LCHILD(idx)].v);
 		}
 	}
 	return tree[idx].v;
 }
 
-long long queryTree(int idx,int end) {
-	if (tree[idx].r == end) {
+long long queryTree(int idx,long long end) {
+	if (tree[idx].r <= end) {
 		return tree[idx].v;
 	}
 	else if (end > (tree[idx].r+tree[idx].l)/2) {
@@ -99,13 +101,13 @@ long long queryTree(int idx,int end) {
 }
 
 void dfs(vector<bool> &visited,vector<city> &g,vector<query> &qry, int idx) {
-	visited[idx] = true;
-	for (auto q : g[idx].q) {
-		qry[q].ans = queryTree(0,qry[q].W);
-	}
 	for (auto r : g[idx].r) {
 		if (!visited[r.to - 1]) {
+			visited[r.to - 1] = true;
 			updateTree(0,r.L,r.A);
+			for (auto q : g[r.to - 1].q) {
+				qry[q].ans = queryTree(0,qry[q].W);
+			}
 			dfs(visited,g,qry,r.to-1);
 			updateTree(0,r.L,0);
 		}
@@ -130,7 +132,8 @@ int main()
 
 		for (size_t i = 0; i < N - 1; i++)
 		{
-			int x, y, L, A;
+			int x, y, L;
+			long long A;
 			cin >> x >> y >> L >> A;
 			g[x-1].r.push_back(road(y, L, A));
 			g[y-1].r.push_back(road(x, L, A));
@@ -145,6 +148,8 @@ int main()
 			a[i].W = W;
 			g[C - 1].q.push_back(i);
 		}
+		
+		visited[0] = true;
 
 		dfs(visited,g,a,0);
 
