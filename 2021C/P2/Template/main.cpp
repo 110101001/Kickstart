@@ -18,7 +18,14 @@ int main()
 	cin >> case_number;
 
 	for (int case_count = 1; case_count <= case_number; case_count++) {
-		
-		cout << "Case #" << case_count << ": " << endl;
+		long long G;
+		long long res=0;
+		cin >> G;
+		for (long long i = 1; i * i - i < 2 * G; i++) {
+			if ((G - (i * (i - 1) / 2)) % i == 0) {
+				res += 1;
+			}
+		}
+		cout << "Case #" << case_count << ": " << res << endl;
 	}
 }
