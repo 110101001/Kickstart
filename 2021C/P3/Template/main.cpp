@@ -10,56 +10,95 @@
 #define SWAP(x,y)  {int tempVar = (x); (x) = (y) ; (y) = tempVar;}
 
 using namespace std;
-const string one("PRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRSPRS");
-const string zero("PPPPPPPPPPPPPPPPPPPPRRRRRRRRRRRRRRRRRRRRRSSSSSSSSSSSSSSSSSSS");
 
-void calcBest(double W,double E) {
-	int bestI=0, maxRes=0;
-	for (int i = 0; i < 60; i++) {
-		int k = i + 1;
-		int p = i + 1, s = 0, r = 0;
-		double res=0;
-		for (; k < 60; k++) {
-			if (W * p / (k) + E * s / (k) < W * r / (k) + E * p / (k) &&
-				W * s / (k) + E * r / (k) < W * r / (k) + E * p / (k)) {
-				res += W * r / (k) + E * p / (k);
-				s++;
-			}
-			else if (W * s / (k) + E * r / (k) < W * p / (k) + E * s / (k)) {
-				res += W * p / (k) + E * s / (k);
-				r++;
-			}
-			else {
-				res += W * s / (k) + E * r / (k);
-				p++;
-			}
+enum {
+	S,P,R
+};
+
+typedef struct sol {
+	double val;
+	unsigned char c;
+}sol;
+
+sol v[61][61][61];
+double W, E;
+
+double dp(int r,int s,int p) {
+	if (v[r][s][p].val < 0) {
+		int t = r + s + p - 1;
+		double valr=0, vals=0, valp=0;
+		if (r != 0) {
+			valr = dp(r - 1, s, p) + (W * p) / t + (E * s) / t;
 		}
-		
-		if (res > maxRes) {
-			bestI = i;
-			maxRes = res;
+		if (s != 0) {
+			vals = dp(r, s-1, p) + (W * r) / t + (E * p) / t;
 		}
-	}
-	maxRes += W / 3 + E / 3;
-	cout << maxRes << endl;
-	int p = 0, s = 0, r = 0;
-	for (int i = 0; i < bestI;i++) {
-		cout << "P";
-		p++;
-	}
-	for (int i = bestI+1; i <= 60; i++) {
-		if (W * p / (i - 1) + E * s / (i - 1) < W * r / (i - 1) + E * p / (i - 1)&&
-			W * s / (i - 1) + E * r / (i - 1) < W * r / (i - 1) + E * p / (i - 1)) {
-			s++;
-			cout << "S";
+		if (p != 0) {
+			valp = dp(r , s, p-1) + (W * s) / t + (E * r) / t;
 		}
-		else if (W * s / (i - 1) + E * r / (i - 1) < W * p / (i - 1) + E * s / (i - 1)) {
-			r++;
-			cout << "R";
+		if (valr > vals && valr > valp) {
+			v[r][s][p].val = valr;
+			v[r][s][p].c = R;
+		}
+		else if (vals > valp) {
+			v[r][s][p].val = vals;
+			v[r][s][p].c = S;
 		}
 		else {
-			p++;
-			cout << "P";
+			v[r][s][p].val = valp;
+			v[r][s][p].c = P;
+		}
+	}
+	return v[r][s][p].val;
+}
+
+void dp_init() {
+	for (int r = 0; r < 61; r++) {
+		for (int s = 0; s < 61; s++) {
+			for (int p = 0; p < 61; p++) {
+				v[r][s][p].val = -1;
+			}
+		}
+	}
+	v[1][0][0].val = W / 3 + E / 3;
+	v[1][0][0].c = R;
+	v[0][1][0].val = W / 3 + E / 3;
+	v[0][1][0].c = S;
+	v[0][0][1].val = W / 3 + E / 3;
+	v[0][0][1].c = P;
+}
+
+void search(int* r, int* s, int* p) {
+	double best=0;
+	for (int i = 0; i <= 60; i++) {
+		for (int j = 0; j < 60 - i; j++) {
+			int k = 60 - i - j;
+			double res = dp(i, j, k);
+			if (best < res) {
+				*r = i;
+				*s = j;
+				*p = k;
+				best = res;
+			}
+		}
+	}
+}
+
+void rev(int r,int s,int p,char *seq) {
+	for (int i = 59; i >= 0; i--) {
+		switch (v[r][s][p].c) {
+		case R:
+			seq[i] = 'R';
+			r--;
+			break;
+		case S:
+			seq[i] = 'S';
+			s--;
+			break;
+		case P:
+			seq[i] = 'P';
+			p--;
+			break;
 		}
 	}
 }
@@ -72,16 +111,16 @@ int main()
 	cin >> case_number;
 	cin >> goal;
 	for (int case_count = 1; case_count <= case_number; case_count++) {
-		int W, E;
+		int r, s, p;
+		char ans[61];
+		ans[60] = 0;
 		cin >> W >> E;
-		
-		cout << "Case #" << case_count << ": ";
-		if (E > 0.01) {
-			cout << one;
-		}
-		else {
-			cout << zero;
-		}
+		dp_init();
+		search(&r,&s,&p);
+		rev(r, s, p, ans);
+
+		cout << "Case #" << case_count << ": " << ans << endl;
+
 		cout << endl;
 	}
 }
