@@ -15,32 +15,35 @@
 using namespace std;
 
 typedef enum op_type {
-	NUM=0,ADD,MULT,SPEC
+	NUM = 0, ADD = 1, MULT = 2, SPEC = 3, SERIALIZED = 4
 }op_type;
 
 class item{
 public:
 	op_type t;
-	int v;
+	union {
+		int v;
+		struct {
+			vector<item*>* s;
+			vector<int> *coef;
+		};
+	};
 	item* l;
 	item* r;
 	item* p;
 
-	item(int _num) {
-		t = NUM;
-		v = _num;
+	item(int _num) :
+		t(NUM), v(_num) {
 		l = r = p = NULL;
 	}
 
-	item(enum op_type _t) {
-		t = _t;
-		v = 0;
+	item(enum op_type _t): 
+	t(_t),v(0){
 		l = r = p = NULL;
 	}
 
-	item(const item& rhs) {
-		t = rhs.t;
-		v = rhs.v;
+	item(const item& rhs):
+	t(rhs.t),v(rhs.v){
 		if (rhs.l != NULL) {
 			l = new item(*rhs.l);
 		}
@@ -54,7 +57,12 @@ public:
 			r = NULL;
 		}
 	}
-
+	
+	~item() {
+		if (SERIALIZED == t) {
+			delete s;
+		}
+	}
 	bool operator ==(const item &rhs) {
 		if (t != rhs.t) {
 			return false;
@@ -131,21 +139,6 @@ public:
 	}
 };
 
-map<item,int> terms;
-int current_count = 0;
-
-int match_spec(item &i) {
-	auto iter = terms.find(i);
-	if (iter == terms.end()) {
-		auto ins = make_pair(i,--current_count);
-		terms.insert(ins);
-		return current_count;
-	}
-	else {
-		return iter->second;
-	}
-}
-
 item* parse_exp() {
 	item* p = NULL, * l = NULL, * r = NULL;
 	char c = cin.peek();
@@ -195,6 +188,7 @@ item* parse_exp() {
 	return p;
 }
 
+//reduce tree to ensure when iterating from root or #'s subtrees, adds are always visited before mults, until meet #
 item* reduce(item *e) {
 	switch (e->t) {
 	case NUM:
@@ -203,7 +197,7 @@ item* reduce(item *e) {
 	case SPEC:
 		e->l = reduce(e->l);
 		e->r = reduce(e->r);
-		e->v = match_spec(*e);
+		//e->v = match_spec(*e);
 		return e;
 		break;
 	case ADD: 
@@ -237,6 +231,11 @@ item* reduce(item *e) {
 		e->r = reduce(e->r);
 		if (e->l->t == NUM && e->r->t == NUM) {
 			e->v = e->l->v * e->r->v;
+			delete e->l;
+			delete e->r;
+			e->l = NULL;
+			e->r = NULL;
+			return e;
 		}
 		else if (e->l->t == NUM) {
 			if (e->l->v == 1) {
@@ -246,11 +245,128 @@ item* reduce(item *e) {
 				delete e;
 				return r;
 			}
+			else if (e->l->v == 0) {
+				item* r = new item(0);
+				r->p = e->p;
+				delete e->r;
+				delete e->l;
+				delete e;
+				return r;
+			}
+		}
+		else if (e->r->t == NUM) {
+			if (e->r->v == 1) {
+				item* l = e->l;
+				l->p = e->p;
+				delete e->r;
+				delete e;
+				return l;
+			}
+			else if (e->r->v == 0) {
+				item* l = new item(0);
+				l->p = e->p;
+				delete e->r;
+				delete e->l;
+				delete e;
+				return l;
+			}
+		}
+		if (e->l->t == ADD) {
+			item* p = new item(ADD);
+			p->p = e->p;
+			p->l = new item(MULT);
+			p->r = new item(MULT);
+			p->l->p = p;
+			p->r->p = p;
+			p->l->l = e->l->l;
+			p->l->r = e->r;
+			p->r->l = e->l->r;
+			p->r->r = new item(*e->r);
 
+			p->l->l->p = p->l;
+			p->l->r->p = p->l;
+			p->r->l->p = p->r;
+			p->r->r->p = p->r;
+			delete e->l;
+			delete e;
+			reduce(p);
+			return p;
+		}
+		if (e->r->t == ADD) {
+			item* p = new item(ADD);
+			p->p = e->p;
+			p->l = new item(MULT);
+			p->r = new item(MULT);
+			p->l->p = p;
+			p->r->p = p;
+			p->l->r = e->r->l;
+			p->l->l = e->l;
+			p->r->r = e->r->r;
+			p->r->l = new item(*e->l);
+
+			p->l->l->p = p->l;
+			p->l->r->p = p->l;
+			p->r->l->p = p->r;
+			p->r->r->p = p->r;
+			delete e->r;
+			delete e;
+			reduce(p);
+			return p;
 		}
 		break;
 	}
+	if ((*e->l) > (*e->r)) {
+		item* temp = e->l;
+		e->l = e->r;
+		e->r = temp;
+	}
 	return e;
+}
+
+//combine terms
+item *serialize(item *p) {
+	switch (p->t) {
+		case NUM:
+			p->t = SERIALIZED;
+			item* tmp = new item(1);
+			p->s = new vector<item*>(1);
+			(*p->s)[0] = tmp;
+			(*p->coef)[0] = p->v;
+			break;
+		case ADD:
+			p->t = SERIALIZED;
+			p->s = new vector<item*>;
+			if (p->l->t == SERIALIZED && p->r->t == SERIALIZED) {
+				int i = 0;
+				int j = 0;
+				int k = 0;
+				vector<int>* coefa = p->l->coef, *coefb = p->r->coef;
+				vector<item*>* sa = p->l->s, * sb = p->r->s;
+				p->s->resize(sa->size() + sb->size());
+				p->coef->resize(coefa->size() + coefb->size());
+				while (i < sa->size() &&
+					j < sb->size()) {
+					if (*(*sa)[i] > *(*sb)[j]) {
+						(*p->s)[k] = (*sb)[j];
+						(*p->coef)[k] = (*coefb)[j];
+						j++;
+					}
+					else if (*(*sa)[i] == *(*sb)[j]) {
+						(*p->s)[k] = (*sa)[i];
+						(*p->coef)[k] = (*coefa)[i] + (*coefb)[j];
+						i++;
+						j++;
+					}
+					else {
+						(*p->s)[k] = (*sa)[i];
+						(*p->coef)[k] = (*coefa)[i];
+						i++;
+					}
+					k++;
+				}
+				
+			}
+	}
 }
 
 int main()
