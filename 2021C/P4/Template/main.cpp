@@ -23,7 +23,7 @@ struct Wint :vector<int>
 	}
 	Wint& check()
 	{
-		while (!empty() && !back())pop_back();
+		while (!empty() && !back() && size() != 1)pop_back();
 		if (empty())return *this;
 		for (int i = 1; i < size(); ++i)
 		{
@@ -41,10 +41,15 @@ struct Wint :vector<int>
 
 istream& operator>>(istream& is, Wint& n)
 {
-	string s;
-	is >> s;
+	char c;
+	c = is.peek();
 	n.clear();
-	for (int i = s.size() - 1; i >= 0; --i)n.push_back(s[i] - '0');
+	while (c >= '0' && c <= '9') {
+		n.push_back(c - '0');
+		cin >> c;
+		c = is.peek();
+	}
+	reverse(n.begin(),n.end());
 	return is;
 }
 ostream& operator<<(ostream& os, const Wint& n)
@@ -293,7 +298,7 @@ item* parse_exp() {
 		l = parse_exp();
 	}
 	else {
-		int lval;
+		Wint lval;
 		cin >> lval;
 		l = new item(lval);
 	}
@@ -362,16 +367,27 @@ int main()
 {
 	ios_base::sync_with_stdio(false), cin.tie(nullptr);
 	int case_number;//total number of case
+	Wint k(2000);
 	cin >> case_number;
-
+	
 	for (int case_count = 1; case_count <= case_number; case_count++) {
-		int n;
+		int n,count=1;
 		cin >> n;
-		vector<Wint> exp(n);
+		map<Wint, int> index;
+		vector<int> exp(n);
 		for (int i = 0; i < n; i++) {
 			item *e = parse_exp();
 			e = reduce(e);
-			exp[i] = e->v;
+			auto id = index.find(e->v);
+			if (id == index.end()) {
+				auto ins = make_pair(e->v,count);
+				index.insert(ins);
+				exp[i] = count;
+				count++;
+			}
+			else {
+				exp[i] = id->second;
+			}
 		}
 		cout << "Case #" << case_count << ": ";
 		for (int i = 0; i < n; i++) {
