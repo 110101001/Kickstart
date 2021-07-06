@@ -64,3 +64,21 @@ int gcd(int a,int b) {
 		}
 	} while (true);
 }
+
+int binaryFind(vector<int>& nums, int n)
+{
+	int left = 0;
+	int right = nums.size() - 1;
+	while(left < right)
+	{
+		int middle = (left + right) / 2;
+		if(nums[middle] > n)
+			right = middle;
+		else if(nums[middle] <= n)
+			left = middle + 1;
+	}
+	if(nums[left] > n)
+		return left;
+	else
+		return -1;
+}
