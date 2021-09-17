@@ -1,0 +1,31 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <math.h>
+
+#define ABS(x) (((x)>0)?(x):(-(x)))
+#define MAX(x,y) ((x>y)?(x):(y))
+#define MIN(x,y) ((x<y)?(x):(y))
+#define SWAP(x,y)  {int tempVar = (x); (x) = (y) ; (y) = tempVar;}
+
+using namespace std;
+
+int main()
+{
+	ios_base::sync_with_stdio(false), cin.tie(nullptr);
+	int case_number;//total number of case
+	cin >> case_number;
+
+	for (int case_count = 1; case_count <= case_number; case_count++) {
+		int R,C,K;
+		int x1,y1,x2,y2;
+
+		cin>>R>>C>>K;
+		cin>>x1>>y1>>x2>>y2;
+
+
+
+		cout << "Case #" << case_count << ": " << endl;
+	}
+}
