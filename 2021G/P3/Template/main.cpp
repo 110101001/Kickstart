@@ -18,48 +18,34 @@ int main()
 	cin >> case_number;
 
 	for (int case_count = 1; case_count <= case_number; case_count++) {
-		int n,k;
+		int n,k,inf,ans;
 		cin>>n>>k;
-		int minTree=n+1;
+		ans=inf=n+1;
 		vector<int> tree(n);
-		vector<int> prefix(n+1);
-		prefix[0]=0;
+		vector<int> best(k+1,inf);
+		best[0]=0;
 		for(int i=0;i<n;i++){
 			cin >> tree[i];
-			prefix[i+1]=prefix[i]+tree[i];
 		}
-		for(int s1=0;s1<k;s1++){
-
-		}
-		for(int s1=0;s1<n;s1++){
-			for(int e1=s1+1;e1<n+1;e1++){
-				int diff = k-prefix[e1]+prefix[s1];
-				if(diff == 0){
-					minTree=MIN(minTree,e1-s1);
-				}
-				else if(diff < 0){
+		for(int i=n-1;i>=0;i--){
+			int preSum=0;
+			for(int j=i;j>=0;j--){
+				preSum+=tree[j];
+				if(preSum > k){
 					break;
 				}
-				else{
-					int s2=e1+1,e2=s2;
-					while(e2<n+1){
-						if(prefix[e2]-prefix[s2] > diff){
-							s2++;
-						}
-						else if(prefix[e2]-prefix[s2] < diff){
-							e2++;
-						}
-						else{
-							minTree=MIN(minTree,e1-s1+e2-s2);
-							s2++;
-						}
-					}
+				ans=MIN(ans,i-j+1+best[k-preSum]);	
+			}
+			preSum=0;
+			for(int j=i+1;j<n;j++){
+				preSum+=tree[j];
+				if(preSum > k){
+					break;
 				}
+				best[preSum]=MIN(best[preSum],j-i);
 			}
 		}
-		if(minTree == n+1){
-			minTree=-1;
-		}
-		cout << "Case #" << case_count << ": " << minTree<<endl;
+		if(ans ==inf) ans = -1;
+		cout << "Case #" << case_count << ": " << ans<<endl;
 	}
 }
